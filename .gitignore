@@ -1,8 +1,11 @@
+Tesseract-OCR/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 *.log
+.vscode/
 # C extensions
 *.so
 

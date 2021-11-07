@@ -1,6 +1,7 @@
 #Python 3 program to divide PDF on pages depend on information on this pages
 #autor: Michał Franczak
 #license: MIT
+#version: 0.0.2
 from PIL import Image
 import pytesseract
 import os, errno
@@ -66,6 +67,7 @@ def extract_images(f):
 
 def find_instruments(text):
     lines=text.splitlines()
+    name=''
     for line in lines:
         if len(line)>3:
             line = line.lower()
@@ -74,8 +76,10 @@ def find_instruments(text):
             find=process.extractOne(line,dict)
             if find[1]>settings.minscore:
                 logging.info('Found new instrument: '+line+' based on match: '+str(find))
-                return line
-    return '-'
+                name=name+' '+line
+    if name=='': 
+        name='-'
+    return name
 
 def define_pages(f):
     global wDir
@@ -104,8 +108,7 @@ def divide_pages(f):
         else:
             logging.info('Saving file: '+actfile)
             inst_safe=re.sub('[^a-zA-Z0-9 \n\.]',"_",actfile)
-
-            dest_path=wDir+'/'+f[0:-4]+'/'+inst_safe+'.pdf'
+            dest_path=wDir+'/'+f[0:-4]+'/'+f[0:-4]+'_'+inst_safe+'.pdf'
             with open(dest_path,"wb") as output_stream:
                 output.write(output_stream)
             output = PdfFileWriter()

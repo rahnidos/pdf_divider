@@ -33,3 +33,10 @@ Trumpet
 Trombone
 Timpani
 Percussion
+Picollo
+Alto
+Tenor
+Baritone
+Soprano
+Cornet
+Flute
