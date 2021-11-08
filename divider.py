@@ -1,7 +1,7 @@
 #Python 3 program to divide PDF on pages depend on information on this pages
 #autor: Michał Franczak
 #license: MIT
-#version: 0.0.2
+#version: 0.0.3
 from PIL import Image
 import pytesseract
 import os, errno
@@ -28,15 +28,15 @@ struct=[]
 dict=[]
 pytesseract.pytesseract.tesseract_cmd=r'Tesseract-OCR\tesseract.exe'
 def prepareSubFolder(f):
-    logging.info('Preparing file: '+f)
+    logging.info('Preparing song: '+f)
     global struct
     global wDir
     struct=[]
     actDocPages=0
-    path=wDir+'/'+f[0:-4]
-    tmppath=wDir+'/tmp/'+f[0:-4]
+    path=wDir+'/'+f
+    tmppath=wDir+'/tmp/'+f
     try:
-        os.mkdir(path)
+        #os.mkdir(path)
         os.mkdir(tmppath)
     except OSError as e:
         if e.errno != errno.EEXIST:
@@ -44,17 +44,17 @@ def prepareSubFolder(f):
             exit(1)
         else:
             logging.warning('Directory already exsit - content will be overwritten!')
-            for file in os.listdir(path):
-                os.remove(path+'/'+file)
+            #for file in os.listdir(path):
+            #    os.remove(path+'/'+file)
     else:
-        logging.info('Subfolder created')
+        logging.info('Subfolders created')
 
-def extract_images(f):
+def extract_images(s,f):
     logging.info('Extracting images from file')
     global wDir
     global actDocPages
     global struct
-    in_file=fitz.open(wDir+'/'+f)
+    in_file=fitz.open(wDir+'/'+s+'/'+f)
     actDocPages=len(in_file)
     for i in range(actDocPages):
         page=in_file.load_page(i)
@@ -94,29 +94,37 @@ def define_pages(f):
         if find != '-':
             actinst=find
         struct[i]=actinst
+        logging.info('Intrument'+actinst+' added to structure with index: '+str(i))
 
-def divide_pages(f):
+def divide_pages(s,f):
     global wDir
     global struct
-    input_pdf = PdfFileReader(wDir+'/'+f)
-    actfile=struct[0]
+    input_pdf = PdfFileReader(wDir+'/'+s+'/'+f)
+    resfile= open(wDir+'/'+s+'/description.txt', 'a')
+    #actfile=struct[0]
     output = PdfFileWriter()
     for i, inst in enumerate(struct):
+        if i==0: actfile=inst
         actPage=input_pdf.getPage(i)
         if actfile==inst:
             output.addPage(actPage)
         else:
             logging.info('Saving file: '+actfile)
             inst_safe=re.sub('[^a-zA-Z0-9 \n\.]',"_",actfile)
-            dest_path=wDir+'/'+f[0:-4]+'/'+f[0:-4]+'_'+inst_safe+'.pdf'
+            dest_path=wDir+'/'+s+'/'+s+'_'+inst_safe+'.pdf'
             with open(dest_path,"wb") as output_stream:
                 output.write(output_stream)
             output = PdfFileWriter()
             actfile=inst
             output.addPage(actPage)
-
-
-
+        if i==len(struct)-1:
+            logging.info('Saving file: '+actfile)
+            inst_safe=re.sub('[^a-zA-Z0-9 \n\.]',"_",actfile)
+            dest_path=wDir+'/'+s+'/'+s+'_'+inst_safe+'.pdf'
+            with open(dest_path,"wb") as output_stream:
+                output.write(output_stream)
+        resfile.write(s+'; '+f+'; '+str(i+1)+'; '+re.sub('[^a-zA-Z0-9 \n\.]',"_",inst)+'\r\n')
+    
 def main():
     global wDir
     global dict
@@ -140,14 +148,14 @@ def main():
             exit(1)
         else:
             logging.info('Temporary directory exist - OK')
-    for filename in os.listdir(wDir):
-        if filename.endswith(".pdf"):
-            prepareSubFolder(filename)
-            #if(not checkOCR(filename)):
-            #    logging.info('Text layer not found, OCR process started')
-            extract_images(filename)
-            define_pages(filename)
-            divide_pages(filename)
+    for songname in os.listdir(wDir):
+        if (songname=='tmp'): continue
+        for filename in os.listdir(wDir+'/'+songname):
+            prepareSubFolder(songname)
+            if filename.endswith(".pdf"):
+                extract_images(songname,filename)
+                define_pages(filename)
+                divide_pages(songname,filename)
 
 
 if __name__ == '__main__':
